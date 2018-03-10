@@ -1,5 +1,6 @@
 #include "player.hpp"
 #include <cstdlib>
+#include <vector>
 
 /*
  * Constructor for the player; initialize everything here. The side your AI is
@@ -46,7 +47,7 @@ int Player::calcScore(int x, int y) {
  * The move returned must be legal; if there are no valid moves for your side,
  * return nullptr.
  */
-Move *Player::doMove(Move *opponentsMove, int ms_left) {
+/*Move *Player::doMove(Move *opponentsMove, int ms_left) {
     board->doMove(opponentsMove, opp_color);
     if (board->hasMoves(our_color))
     {
@@ -54,10 +55,6 @@ Move *Player::doMove(Move *opponentsMove, int ms_left) {
       for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++){
           Move *m = new Move(x, y);
-          /*if (board->checkMove(m, our_color)){
-            board->doMove(m, our_color);
-            return m;
-          }*/
           if (board->checkMove(m, our_color) &&
               calcScore(x, y) > best_score)
           {
@@ -73,4 +70,155 @@ Move *Player::doMove(Move *opponentsMove, int ms_left) {
       return best_move;
     }
     return nullptr;
+}*/
+
+//Replacement function minimax style
+Move *Player::doMove(Move *opponentsMove, int ms_left) {
+    this->board->doMove(opponentsMove, opp_color);
+    Move * move = NULL;
+    move = minimax(2);
+    this->board->doMove(move, our_color);
+    return move;
+}
+
+Move *Player::minimax(int depth)
+{
+  //save all possible moves to vector
+  vector <Move *> possible_moves;
+  for (int x = 0; x < 8; x++) {
+    for (int y = 0; y < 8; y++){
+      Move *m = new Move(x, y);
+      if (board->checkMove(m, our_color))
+      {
+        possible_moves.push_back(m);
+      }
+      else
+      {
+        delete m;
+      }
+    }
+  }
+  if (possible_moves.size() == 0)
+  {
+    return NULL;
+  }
+  //recursive call, minimax
+  int max_score;//mmaximize
+  int alpha = -999999; //maximize
+  int beta = 999999;//minimize
+  int best_x, best_y;
+  for (unsigned int i = 0; i < possible_moves.size(); i++)
+  {
+    //try the move out on the board
+    Board *testBoard = board->copy();
+    Move *test = possible_moves[i];
+    testBoard->doMove(test, our_color);
+    //save the maximum of the minimum scores from the moves
+    max_score = this->rec_mm(testBoard, depth-1, alpha, beta, opp_color);
+    if (alpha <= max_score)
+    {
+      alpha = max_score;
+      best_x = test->getX();
+      best_y = test->getY();
+    }
+    delete testBoard;
+  }
+
+  // get rid of memory leaks
+  for (unsigned int i = 0; i < possible_moves.size(); i++)
+  {
+    Move *m = possible_moves[i];
+    delete m;
+  }
+  Move *move = new Move(best_x, best_y);
+  return move;
+}
+//recursive calls to minimax
+int Player::rec_mm(Board *board, int depth, int alpha, int beta, Side side)
+{
+  if (depth == 0)
+  {
+    return (board->count(our_color)-board->count(opp_color));
+  }
+  //save all possible moves to vector
+  vector <Move *> possible_moves;
+  for (int x = 0; x < 8; x++) {
+    for (int y = 0; y < 8; y++){
+      Move *m = new Move(x, y);
+      if (board->checkMove(m, side))
+      {
+        possible_moves.push_back(m);
+      }
+      else
+      {
+        delete m;
+      }
+    }
+  }
+  if (possible_moves.size() == 0)
+  {
+    return board->count(our_color)-board->count(opp_color);
+  }
+
+  //recursive call!
+  //if our side, maximize our score
+  //if their side, anticipate minimizing our score.
+  int score;
+  if (side == our_color){
+    alpha = -999999;
+    for (unsigned int i = 0; i < possible_moves.size(); i++)
+    {
+      //try the move out on the board
+      Board *testBoard = board->copy();
+      Move *test = possible_moves[i];
+      testBoard->doMove(test, side);
+      //save the maximum of the minimum scores from the moves
+      score = this->rec_mm(testBoard, depth - 1, alpha, beta, opp_color);
+      if (alpha < score){
+        alpha = score;
+      }
+      //quit if waste of time and quit searching in subtree
+      if (beta <= alpha)
+      {
+        break;
+      }
+      delete testBoard;
+    }
+    // get rid of memory leaks
+    for (unsigned int i = 0; i < possible_moves.size(); i++)
+    {
+      Move *m = possible_moves[i];
+      delete m;
+    }
+    return alpha;
+  }
+  else
+  {
+    beta = 999999;
+    for (unsigned int i = 0; i < possible_moves.size(); i++)
+    {
+      //try the move out on the board
+      Board *testBoard = board->copy();
+      Move *test = possible_moves[i];
+      testBoard->doMove(test, side);
+      //save the maximum of the minimum scores from the moves
+      score = this->rec_mm(testBoard, depth - 1, alpha, beta, our_color);
+      if (score < beta){
+        beta = score;
+      }
+      //quit if waste of time and quit searching in subtree
+      if (beta <= alpha)
+      {
+        break;
+      }
+      delete testBoard;
+    }
+    // get rid of memory leaks
+    for (unsigned int i = 0; i < possible_moves.size(); i++)
+    {
+      Move *m = possible_moves[i];
+      delete m;
+    }
+    return beta;
+  }
 }
