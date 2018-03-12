@@ -29,12 +29,11 @@ public:
     //int min(Board *board, int depth, int temp_a, int temp_b);
     //int max(Board *board, int depth, int temp_a, int temp_b);
     int rec_mm(Board *board, int depth, int alpha, int beta, Side side);
-
+    Board *board;
 
 private:
     Side our_color;
     Side opp_color;
-    Board *board;
 };
 
 #endif

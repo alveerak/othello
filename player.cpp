@@ -75,8 +75,7 @@ int Player::calcScore(int x, int y) {
 //Replacement function minimax style
 Move *Player::doMove(Move *opponentsMove, int ms_left) {
     this->board->doMove(opponentsMove, opp_color);
-    Move * move = NULL;
-    move = minimax(2);
+    Move * move = minimax(6);
     this->board->doMove(move, our_color);
     return move;
 }
@@ -98,26 +97,27 @@ Move *Player::minimax(int depth)
       }
     }
   }
+
   if (possible_moves.size() == 0)
   {
     return NULL;
   }
   //recursive call, minimax
-  int max_score;//mmaximize
+  int temp_score;//maximize
   int alpha = -999999; //maximize
   int beta = 999999;//minimize
   int best_x, best_y;
   for (unsigned int i = 0; i < possible_moves.size(); i++)
   {
     //try the move out on the board
-    Board *testBoard = board->copy();
+    Board *testBoard = this->board->copy();
     Move *test = possible_moves[i];
     testBoard->doMove(test, our_color);
     //save the maximum of the minimum scores from the moves
-    max_score = this->rec_mm(testBoard, depth-1, alpha, beta, opp_color);
-    if (alpha <= max_score)
+    temp_score = this->rec_mm(testBoard, depth-1, alpha, beta, opp_color);
+    if (alpha <= temp_score)
     {
-      alpha = max_score;
+      alpha = temp_score;
       best_x = test->getX();
       best_y = test->getY();
     }
@@ -133,19 +133,20 @@ Move *Player::minimax(int depth)
   Move *move = new Move(best_x, best_y);
   return move;
 }
+
 //recursive calls to minimax
-int Player::rec_mm(Board *board, int depth, int alpha, int beta, Side side)
+int Player::rec_mm(Board *newboard, int depth, int alpha, int beta, Side side)
 {
-  if (depth == 0)
+  if (depth == 0 || newboard->isDone())
   {
-    return (board->count(our_color)-board->count(opp_color));
+    return (newboard->count(our_color)-newboard->count(opp_color));
   }
   //save all possible moves to vector
   vector <Move *> possible_moves;
   for (int x = 0; x < 8; x++) {
     for (int y = 0; y < 8; y++){
       Move *m = new Move(x, y);
-      if (board->checkMove(m, side))
+      if (newboard->checkMove(m, side))
       {
         possible_moves.push_back(m);
       }
@@ -155,9 +156,10 @@ int Player::rec_mm(Board *board, int depth, int alpha, int beta, Side side)
       }
     }
   }
+
   if (possible_moves.size() == 0)
   {
-    return board->count(our_color)-board->count(opp_color);
+    return (newboard->count(our_color)-newboard->count(opp_color));
   }
 
   //recursive call!
@@ -165,15 +167,19 @@ int Player::rec_mm(Board *board, int depth, int alpha, int beta, Side side)
   //if their side, anticipate minimizing our score.
   int score;
   if (side == our_color){
-    alpha = -999999;
+    score = -999999;
+    int temp_score;
     for (unsigned int i = 0; i < possible_moves.size(); i++)
     {
       //try the move out on the board
-      Board *testBoard = board->copy();
+      Board *testBoard = newboard->copy();
       Move *test = possible_moves[i];
       testBoard->doMove(test, side);
       //save the maximum of the minimum scores from the moves
-      score = this->rec_mm(testBoard, depth - 1, alpha, beta, opp_color);
+      temp_score = this->rec_mm(testBoard, depth - 1, alpha, beta, opp_color);
+      if (temp_score > score){
+        score = temp_score;
+      }
       if (alpha < score){
         alpha = score;
       }
@@ -190,23 +196,28 @@ int Player::rec_mm(Board *board, int depth, int alpha, int beta, Side side)
       Move *m = possible_moves[i];
       delete m;
     }
+    //return score;
     return alpha;
   }
-  else
+  else //minimizing
   {
-    beta = 999999;
+    score = 999999;
+    int temp_score;
     for (unsigned int i = 0; i < possible_moves.size(); i++)
     {
       //try the move out on the board
-      Board *testBoard = board->copy();
+      Board *testBoard = newboard->copy();
       Move *test = possible_moves[i];
       testBoard->doMove(test, side);
       //save the maximum of the minimum scores from the moves
-      score = this->rec_mm(testBoard, depth - 1, alpha, beta, our_color);
+      temp_score = this->rec_mm(testBoard, depth - 1, alpha, beta, our_color);
+      if (temp_score < score){
+        score = temp_score;
+      }
       if (score < beta){
         beta = score;
       }
-      //quit if waste of time and quit searching in subtree
+      //quit searching in subtree if waste of time
       if (beta <= alpha)
       {
         break;
@@ -219,6 +230,7 @@ int Player::rec_mm(Board *board, int depth, int alpha, int beta, Side side)
       Move *m = possible_moves[i];
       delete m;
     }
+    //return score;
     return beta;
   }
 }
