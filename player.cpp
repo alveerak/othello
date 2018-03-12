@@ -75,7 +75,11 @@ int Player::calcScore(int x, int y) {
 //Replacement function minimax style
 Move *Player::doMove(Move *opponentsMove, int ms_left) {
     this->board->doMove(opponentsMove, opp_color);
-    Move * move = minimax(6); //depth 6
+    int depth = 7;
+    if (testingMinimax){
+        depth = 2;
+    }
+    Move * move = minimax(depth);
     this->board->doMove(move, our_color);
     return move;
 }
@@ -114,19 +118,25 @@ Move *Player::minimax(int depth)
   int beta = 999999;	//minimum opponent score found so far regardless
 						//of what player plays
   int best_x, best_y;
+  Move test = Move(0,0);
   for (unsigned int i = 0; i < possible_moves.size(); i++)
   {
     //try the move out on the board
     Board *testBoard = this->board->copy();
-    Move *test = possible_moves[i];
-    testBoard->doMove(test, our_color);
+    test = Move(possible_moves[i]->x, possible_moves[i]->y);
+    testBoard->doMove(&test, our_color);
     //save the maximum of the minimum scores from the moves
-    temp_score = this->rec_mm(testBoard, depth-1, alpha, beta, opp_color);
+    if (testingMinimax){
+            temp_score = this->rec_mm(testBoard, depth-1, alpha, beta, opp_color);
+    }
+    else{
+        temp_score = calcScore(test.getX(), test.getY())+this->rec_mm(testBoard, depth-1, alpha, beta, opp_color);
+    }
     if (alpha <= temp_score)
     {
       alpha = temp_score;
-      best_x = test->getX();
-      best_y = test->getY();
+      best_x = test.getX();
+      best_y = test.getY();
     }
     delete testBoard;
   }
@@ -191,15 +201,20 @@ int Player::rec_mm(Board *newboard, int depth, int alpha, int beta, Side side)
       Move *test = possible_moves[i];
       testBoard->doMove(test, side);
       //save the maximum of the minimum scores from the moves
-      temp_score = this->rec_mm(testBoard, depth - 1, alpha, beta, opp_color);
+      if (testingMinimax){
+          temp_score = this->rec_mm(testBoard, depth - 1, alpha, beta, opp_color);
+      }else{
+          temp_score = calcScore(test->getX(), test->getY()) +
+                       this->rec_mm(testBoard, depth - 1, alpha, beta, opp_color);
+      }
       if (temp_score > score){
         score = temp_score;
       }
-      if (alpha < score){
-        alpha = score;
-      }
+      //if (alpha < score){
+      //  alpha = score;
+      //}
       // Quit if opponent is guaranteed a higher score
-      if (beta <= alpha)
+      if (beta <= score)
       {
         break;
       }
@@ -211,8 +226,8 @@ int Player::rec_mm(Board *newboard, int depth, int alpha, int beta, Side side)
       Move *m = possible_moves[i];
       delete m;
     }
-    //return score;
-    return alpha;
+    return score;
+    //return alpha;
   }
   else //minimizing
   {
@@ -225,15 +240,20 @@ int Player::rec_mm(Board *newboard, int depth, int alpha, int beta, Side side)
       Move *test = possible_moves[i];
       testBoard->doMove(test, side);
       //save the maximum of the minimum scores from the moves
-      temp_score = this->rec_mm(testBoard, depth - 1, alpha, beta, our_color);
+      if (testingMinimax){
+          temp_score = this->rec_mm(testBoard, depth - 1, alpha, beta, our_color);
+      }else{
+          temp_score = calcScore(test->getX(), test->getY()) +
+                       this->rec_mm(testBoard, depth - 1, alpha, beta, our_color);
+      }
       if (temp_score < score){
         score = temp_score;
       }
-      if (score < beta){
-        beta = score;
-      }
+      //if (score < beta){
+      //  beta = score;
+      //}
       //quit searching in subtree if waste of time
-      if (beta <= alpha)
+      if (score <= alpha)
       {
         break;
       }
@@ -245,7 +265,7 @@ int Player::rec_mm(Board *newboard, int depth, int alpha, int beta, Side side)
       Move *m = possible_moves[i];
       delete m;
     }
-    //return score;
-    return beta;
+    return score;
+    //return beta;
   }
 }
