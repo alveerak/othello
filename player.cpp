@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <vector>
 
-/*
+/**
  * Constructor for the player; initialize everything here. The side your AI is
  * on (BLACK or WHITE) is passed in as "side". The constructor must finish
  * within 30 seconds.
@@ -75,14 +75,19 @@ int Player::calcScore(int x, int y) {
 //Replacement function minimax style
 Move *Player::doMove(Move *opponentsMove, int ms_left) {
     this->board->doMove(opponentsMove, opp_color);
-    Move * move = minimax(6);
+    Move * move = minimax(6); //depth 6
     this->board->doMove(move, our_color);
     return move;
 }
 
+/**
+ * @brief Executes the minimax algorithm of depth.
+ * 
+ * @param depth, max depth of minimax
+ */
 Move *Player::minimax(int depth)
 {
-  //save all possible moves to vector
+  // Save all possible moves to vector possible_moves
   vector <Move *> possible_moves;
   for (int x = 0; x < 8; x++) {
     for (int y = 0; y < 8; y++){
@@ -97,15 +102,17 @@ Move *Player::minimax(int depth)
       }
     }
   }
-
+  // Quit if no moves available
   if (possible_moves.size() == 0)
   {
     return NULL;
   }
-  //recursive call, minimax
-  int temp_score;//maximize
-  int alpha = -999999; //maximize
-  int beta = 999999;//minimize
+  // Recursively call minimax
+  int temp_score;       //stores best score so far
+  int alpha = -999999; 	//maximum score found so far regardless of what
+						//opponent plays
+  int beta = 999999;	//minimum opponent score found so far regardless
+						//of what player plays
   int best_x, best_y;
   for (unsigned int i = 0; i < possible_moves.size(); i++)
   {
@@ -124,7 +131,7 @@ Move *Player::minimax(int depth)
     delete testBoard;
   }
 
-  // get rid of memory leaks
+  // Clean up memory leaks
   for (unsigned int i = 0; i < possible_moves.size(); i++)
   {
     Move *m = possible_moves[i];
@@ -134,14 +141,22 @@ Move *Player::minimax(int depth)
   return move;
 }
 
-//recursive calls to minimax
+/**
+ * @brief Recursive version of the minimax algorithm.
+ * 
+ * @param depth, depth of minimax
+ * @param alpha, maximum player score found so far
+ * @param beta, minimum opponent score so far
+ * @param side, WHITE or BLACK depending on the player's color
+ */
 int Player::rec_mm(Board *newboard, int depth, int alpha, int beta, Side side)
 {
+  // Base case, depth of 0 or no moves left
   if (depth == 0 || newboard->isDone())
   {
     return (newboard->count(our_color)-newboard->count(opp_color));
   }
-  //save all possible moves to vector
+  // Aave all possible moves to vector possible_moves
   vector <Move *> possible_moves;
   for (int x = 0; x < 8; x++) {
     for (int y = 0; y < 8; y++){
@@ -183,14 +198,14 @@ int Player::rec_mm(Board *newboard, int depth, int alpha, int beta, Side side)
       if (alpha < score){
         alpha = score;
       }
-      //quit if waste of time and quit searching in subtree
+      // Quit if opponent is guaranteed a higher score
       if (beta <= alpha)
       {
         break;
       }
       delete testBoard;
     }
-    // get rid of memory leaks
+    // Clean up memory
     for (unsigned int i = 0; i < possible_moves.size(); i++)
     {
       Move *m = possible_moves[i];
